@@ -1,9 +1,7 @@
-        .global _start
-
+.global _start
 
 matrix_mult:
-    ! Reservar espacio en la pila para preservar registros locales
-    sub   %sp, 32, %sp       ! Reservamos 32 bytes
+    sub   %sp, 32, %sp
     st    %l0, [%sp + 0]
     st    %l1, [%sp + 4]
     st    %l2, [%sp + 8]
@@ -13,81 +11,64 @@ matrix_mult:
     st    %l6, [%sp + 24]
     st    %l7, [%sp + 28]
 
-    mov   0, %l0           ! %l0 = i = 0 (fila de A)
+    mov   0, %l0
 outer_loop:
-    cmp   %l0, %i0         ! ¿i < n?
-    bge   end_matrix_mult  ! Si i >= n, terminamos
+    cmp   %l0, %i0
+    bge   end_matrix_mult
     nop
 
-    mov   0, %l1           ! %l1 = j = 0 (columna de B)
+    mov   0, %l1
 inner_j_loop:
-    cmp   %l1, %i2         ! ¿j < p?
-    bge   next_row_i       ! Si j >= p, siguiente fila
+    cmp   %l1, %i2
+    bge   next_row_i
     nop
 
-    mov   0, %l3           ! %l3 = sum = 0 (acumulador para C[i][j])
-    mov   0, %l2           ! %l2 = k = 0 (índice para la multiplicación)
+    mov   0, %l3
+    mov   0, %l2
 inner_k_loop:
-    cmp   %l2, %i1         ! ¿k < m?
-    bge   store_cell       ! Si k >= m, almacenamos sum en C[i][j]
+    cmp   %l2, %i1
+    bge   store_cell
     nop
 
-    !---------------------------
-    ! Calcular dirección de A[i][k]
-    ! offset_A = (i * m + k) * 4
-    !---------------------------
-    mov   %l0, %l4         ! %l4 = i
-    smul  %l4, %i1, %l4     ! %l4 = i * m  (m está en %i1)
-    add   %l4, %l2, %l4     ! %l4 = i*m + k
-    sll   %l4, 2, %l4       ! Multiplicar por 4 (4 bytes por elemento)
-    add   %i3, %l4, %o0     ! Dirección de A[i][k] = base_A + offset
-    ld    [%o0], %l5       ! Cargar A[i][k] en %l5
+    mov   %l0, %l4
+    smul  %l4, %i1, %l4
+    add   %l4, %l2, %l4
+    sll   %l4, 2, %l4
+    add   %i3, %l4, %o0
+    ld    [%o0], %l5
 
-    !---------------------------
-    ! Calcular dirección de B[k][j]
-    ! offset_B = (k * p + j) * 4
-    !---------------------------
-    mov   %l2, %l4         ! %l4 = k
-    smul  %l4, %i2, %l4     ! %l4 = k * p  (p está en %i2)
-    add   %l4, %l1, %l4     ! %l4 = k*p + j
-    sll   %l4, 2, %l4       ! Multiplicar por 4
-    add   %i4, %l4, %o0     ! Dirección de B[k][j] = base_B + offset
-    ld    [%o0], %l6       ! Cargar B[k][j] en %l6
+    mov   %l2, %l4
+    smul  %l4, %i2, %l4
+    add   %l4, %l1, %l4
+    sll   %l4, 2, %l4
+    add   %i4, %l4, %o0
+    ld    [%o0], %l6
 
-    !---------------------------
-    ! Multiplicar y acumular:
-    ! sum += A[i][k] * B[k][j]
-    !---------------------------
-    smul  %l5, %l6, %l7     ! %l7 = A[i][k] * B[k][j]
-    add   %l3, %l7, %l3     ! sum = sum + %l7
+    smul  %l5, %l6, %l7
+    add   %l3, %l7, %l3
 
-    add   %l2, 1, %l2       ! k++
+    add   %l2, 1, %l2
     ba    inner_k_loop
     nop
 
 store_cell:
-    !---------------------------
-    ! Calcular dirección para C[i][j]
-    ! offset_C = (i * p + j) * 4
-    !---------------------------
-    mov   %l0, %l4         ! %l4 = i
-    smul  %l4, %i2, %l4     ! %l4 = i * p  (p está en %i2)
-    add   %l4, %l1, %l4     ! %l4 = i*p + j
-    sll   %l4, 2, %l4       ! Multiplicar por 4
-    add   %i5, %l4, %o0     ! Dirección de C[i][j] = base_C + offset
-    st    %l3, [%o0]       ! Almacenar sum en C[i][j]
+    mov   %l0, %l4
+    smul  %l4, %i2, %l4
+    add   %l4, %l1, %l4
+    sll   %l4, 2, %l4
+    add   %i5, %l4, %o0
+    st    %l3, [%o0]
 
-    add   %l1, 1, %l1       ! j++
+    add   %l1, 1, %l1
     ba    inner_j_loop
     nop
 
 next_row_i:
-    add   %l0, 1, %l0       ! i++
+    add   %l0, 1, %l0
     ba    outer_loop
     nop
 
 end_matrix_mult:
-    ! Restaurar registros locales
     ld    [%sp + 0], %l0
     ld    [%sp + 4], %l1
     ld    [%sp + 8], %l2
@@ -100,20 +81,11 @@ end_matrix_mult:
     retl
     nop
 
-!-------------------------------------------------------------
-! Rutina principal: _start
-! Prepara datos de prueba y llama a matrix_mult.
-! En este ejemplo multiplicamos dos matrices (almacenadas en orden de filas)
-! A: n x m, B: m x p, C: n x p
-!-------------------------------------------------------------
 _start:
-    ! Para este ejemplo, usaremos:
-    ! n = 2 (filas de A), m = 2 (columnas de A y filas de B), p = 2 (columnas de B)
-    mov   2, %i0        ! n = 2
-    mov   2, %i1        ! m = 2
-    mov   2, %i2        ! p = 2
+    mov   2, %i0
+    mov   2, %i1
+    mov   2, %i2
 
-    ! Establecer las direcciones de las matrices utilizando sethi/or:
     sethi   %hi(A), %i3
     or      %i3, %lo(A), %i3
 
@@ -126,17 +98,11 @@ _start:
     call  matrix_mult
     nop
 
-    ! Bucle infinito para detener la ejecución
     ba    .
     nop
 
-        .align 4
+.align 4
 
-! Matriz A (2x2)
 A:      .word   1, 2, 3, 4
-
-! Matriz B (2x2)
 B:      .word   5, 6, 7, 8
-
-! Matriz C (2x2) para almacenar el resultado
 C:      .word   0, 0, 0, 0
