@@ -1,21 +1,6 @@
         .global _start
 
-!-------------------------------------------------------------
-! Subrutina: matrix_mult
-! Multiplicación matricial: C = A x B
-!
-! Parámetros de entrada:
-!   %i0: n (número de filas de A)
-!   %i1: m (número de columnas de A, y filas de B)
-!   %i2: p (número de columnas de B)
-!   %i3: dirección base de A (n x m)
-!   %i4: dirección base de B (m x p)
-!   %i5: dirección base de C (n x p) [resultado]
-!
-! Se asume:
-!   - Almacenamiento en orden de filas.
-!   - Cada elemento es de 4 bytes.
-!-------------------------------------------------------------
+
 matrix_mult:
     ! Reservar espacio en la pila para preservar registros locales
     sub   %sp, 32, %sp       ! Reservamos 32 bytes
